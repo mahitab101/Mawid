@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/Booking/">
+    <Project Path="src/Services/Booking/Mawid.Booking.Api/Mawid.Booking.Api.csproj" Id="54e39be7-806c-498f-aa2e-6a22cb630eb9" />
+    <Project Path="src/Services/Booking/Mawid.Booking.Domain/Mawid.Booking.Domain.csproj" Id="c1cdb4fc-72af-41d5-8b4d-46c58cb6dfea" />
+    <Project Path="src/Services/Booking/Mawid.Booking.Infrastructure/Mawid.Booking.Infrastructure.csproj" Id="b3fd42aa-5e4e-4a27-bd4d-839e1b7e5985" />
+  </Folder>
+</Solution>

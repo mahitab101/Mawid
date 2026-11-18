@@ -1,0 +1,6 @@
+@Mawid.Booking.Api_HostAddress = http://localhost:5159
+
+GET {{Mawid.Booking.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
