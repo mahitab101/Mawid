@@ -4,9 +4,8 @@ using System.Text;
 
 namespace Mawid.Booking.Domain.Entities
 {
-    public class WorkingHours
+    public class WorkingHours : Entity
     {
-        public Guid Id { get; set; }
         public Guid ProviderId { get; set; }
         public DayOfWeek Day { get; set; }
         public TimeOnly StartTime { get; set; }

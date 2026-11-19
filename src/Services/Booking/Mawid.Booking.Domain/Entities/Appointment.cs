@@ -5,9 +5,8 @@ using System.Text;
 
 namespace Mawid.Booking.Domain.Entities
 {
-    public class Appointment
+    public class Appointment : Entity
     {
-        public Guid Id { get; set; }
         public Guid ProviderId { get; set; }
         public Guid ServiceId { get; set; }
 
