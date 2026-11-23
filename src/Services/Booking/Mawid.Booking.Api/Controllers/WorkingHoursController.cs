@@ -19,12 +19,13 @@ namespace Mawid.Booking.Api.Controllers
         {
             _dbContext = dbContext;
         }
+
         [HttpPut]
         public async Task<ActionResult<ApiResponse<List<WorkingHoursResponse>>>> Replace(
             Guid providerId, UpdateWorkingHoursRequest request, CancellationToken cancellationToken)
         {
-            var providedExsist = await _dbContext.Providers.AnyAsync(p=>p.Id == providerId && p.IsActive, cancellationToken);
-            if (!providedExsist) 
+            var providedExsist = await _dbContext.Providers.AnyAsync(p => p.Id == providerId && p.IsActive, cancellationToken);
+            if (!providedExsist)
                 return NotFound(ApiResponse<List<WorkingHoursResponse>>.Fail("Provider not found"));
 
 
@@ -34,7 +35,7 @@ namespace Mawid.Booking.Api.Controllers
 
             _dbContext.WorkingHours.RemoveRange(oldHours);
 
-          
+
             var newHours = request.Slots
                 .Select(slot => slot.ToEntity(providerId))
                 .ToList();
@@ -44,6 +45,28 @@ namespace Mawid.Booking.Api.Controllers
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return Ok(ApiResponse<List<WorkingHoursResponse>>.Ok(newHours.ToResponse(), "Working hours updated"));
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse<List<WorkingHoursResponse>>>> GetAll(Guid providerId, CancellationToken cancellationToken)
+        {
+            var providerExists = await _dbContext.Providers
+               .AnyAsync(p => p.Id == providerId && p.IsActive, cancellationToken);
+
+            if (!providerExists)
+                return NotFound(ApiResponse<List<WorkingHoursResponse>>.Fail("Provider not found"));
+
+            var workingHours = await _dbContext.WorkingHours
+                .AsNoTracking()
+                .Where(s => s.ProviderId == providerId)
+                .OrderBy(s => s.Day)
+                .ThenBy(s => s.StartTime)
+                .ToListAsync(cancellationToken);
+
+            return Ok(
+                   ApiResponse<List<WorkingHoursResponse>>.Ok(
+                   workingHours.ToResponse(),
+                   "Working hours retrieved successfully"));
         }
     }
 }
