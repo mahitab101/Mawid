@@ -1,4 +1,5 @@
 ﻿using Mawid.Booking.Domain.Entities;
+using Mawid.Booking.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -14,6 +15,10 @@ namespace Mawid.Booking.Infrastructure.Persistence.Configurations
             builder.HasOne(a=>a.Provider).WithMany().HasForeignKey(a=>a.ProviderId).OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(a => a.Service).WithMany().HasForeignKey(a=>a.ServiceId).OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(a => new { a.ProviderId, a.StartTime })
+               .IsUnique()
+               .HasFilter($"\"Status\" <> {(int)AppointmentStatus.Cancelled}");
         }
     }
 }

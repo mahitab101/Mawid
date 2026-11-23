@@ -1,0 +1,78 @@
+﻿using Mawid.Booking.Api.Dtos.Appointments;
+using Mawid.Booking.Api.Dtos.UnifiedResponse;
+using Mawid.Booking.Api.Services;
+using Mawid.Booking.Domain.Entities;
+using Mawid.Booking.Domain.Enums;
+using Mawid.Booking.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+
+namespace Mawid.Booking.Api.Controllers
+{
+    [Route("api/appointments")]
+    [ApiController]
+    public class AppointmentsController(BookingDbContext dbContext, AvailabilityService availabilityService) : ControllerBase
+    {
+        [HttpPost]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> Create(
+            CreateAppointmentRequest request, CancellationToken cancellationToken)
+        {
+            var service = await dbContext.Services.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId
+                                       && s.ProviderId == request.ProviderId
+                                       && s.Provider.IsActive, cancellationToken);
+            if (service is null)
+                return NotFound(ApiResponse<AppointmentResponse>.Fail("Provider or service not found"));
+
+            var startUtc = request.StartTime.ToUniversalTime();
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Dubai");
+            var localDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(startUtc, timeZone).DateTime);
+
+            var available = await availabilityService.GetAvailableSlotsAsync(
+                request.ProviderId, request.ServiceId, localDate, cancellationToken);
+            if (available is null || !available.Contains(startUtc))
+                return Conflict(ApiResponse<AppointmentResponse>.Fail("This time slot is not available"));
+
+            var appointment = new Appointment
+            {
+                ProviderId = request.ProviderId,
+                ServiceId = request.ServiceId,
+                StartTime = startUtc,
+                EndTime = startUtc.AddMinutes(service.DurationMinutes),
+                Status = AppointmentStatus.Pending,
+                CustomerName = request.CustomerName,
+                CustomerPhone = request.CustomerPhone,
+                CustomerEmail = request.CustomerEmail,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+            dbContext.Appointments.Add(appointment);
+
+            
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+            {
+                return Conflict(ApiResponse<AppointmentResponse>.Fail("This time slot was just booked by someone else"));
+            }
+
+         
+            return CreatedAtAction(nameof(GetById), new { id = appointment.Id },
+                ApiResponse<AppointmentResponse>.Ok(appointment.ToResponse(), "Appointment booked successfully"));
+        }
+
+        [HttpGet("{id:guid}")]
+        public async Task<ActionResult<ApiResponse<AppointmentResponse>>> GetById(Guid id, CancellationToken cancellationToken)
+        {
+            var appointment = await dbContext.Appointments.AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+
+            return appointment is null
+                ? NotFound(ApiResponse<AppointmentResponse>.Fail("Appointment not found"))
+                : Ok(ApiResponse<AppointmentResponse>.Ok(appointment.ToResponse()));
+        }
+    }
+}

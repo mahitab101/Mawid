@@ -60,9 +60,11 @@ namespace Mawid.Booking.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProviderId");
-
                     b.HasIndex("ServiceId");
+
+                    b.HasIndex("ProviderId", "StartTime")
+                        .IsUnique()
+                        .HasFilter("\"Status\" <> 2");
 
                     b.ToTable("Appointments");
                 });
