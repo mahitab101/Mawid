@@ -1,5 +1,6 @@
 ﻿using Mawid.Booking.Api.Dtos.Providers;
 using Mawid.Booking.Api.Dtos.UnifiedResponse;
+using Mawid.Booking.Api.Services;
 using Mawid.Booking.Domain.Entities;
 using Mawid.Booking.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -102,6 +103,22 @@ namespace Mawid.Booking.Api.Controllers
                 ApiResponse<ProviderResponse>.Ok(
                     provider.ToResponse(),
                     "Provider updated successfully"));
+        }
+
+        [HttpGet("{id:guid}/availability")]
+        public async Task<ActionResult<ApiResponse<List<DateTimeOffset>>>> GetAvailability(
+        Guid id,
+        [FromQuery] DateOnly date,
+        [FromQuery] Guid serviceId,
+        [FromServices] AvailabilityService availabilityService,
+        CancellationToken cancellationToken)
+        {
+            var slots = await availabilityService.GetAvailableSlotsAsync(id, serviceId, date, cancellationToken);
+
+            if (slots is null)
+                return NotFound(ApiResponse<List<DateTimeOffset>>.Fail("Provider or service not found"));
+
+            return Ok(ApiResponse<List<DateTimeOffset>>.Ok(slots, "Available slots retrieved successfully"));
         }
     }
 }

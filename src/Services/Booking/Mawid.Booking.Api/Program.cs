@@ -1,4 +1,5 @@
 using FluentValidation;
+using Mawid.Booking.Api.Services;
 using Mawid.Booking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
@@ -17,6 +18,8 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<BookingDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("BookingDb")));
+
+builder.Services.AddScoped<AvailabilityService>();
 
 var app = builder.Build();
 
