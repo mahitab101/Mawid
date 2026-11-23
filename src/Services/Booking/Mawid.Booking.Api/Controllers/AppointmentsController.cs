@@ -74,5 +74,26 @@ namespace Mawid.Booking.Api.Controllers
                 ? NotFound(ApiResponse<AppointmentResponse>.Fail("Appointment not found"))
                 : Ok(ApiResponse<AppointmentResponse>.Ok(appointment.ToResponse()));
         }
+
+        [HttpPatch("{id:guid}/cancel")]
+        public async Task<ActionResult> Cancel(Guid id, CancellationToken cancellationToken)
+        {
+            var appointment = await dbContext.Appointments
+                .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+
+            if (appointment is null)
+                return NotFound(ApiResponse<object>.Fail("Appointment not found"));
+
+            if (appointment.Status == AppointmentStatus.Cancelled)
+                return NoContent();   
+
+            if (appointment.Status == AppointmentStatus.NoShow || appointment.StartTime <= DateTimeOffset.UtcNow)
+                return Conflict(ApiResponse<object>.Fail("Past appointments cannot be cancelled"));
+
+            appointment.Status = AppointmentStatus.Cancelled;
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return NoContent();
+        }
     }
 }
