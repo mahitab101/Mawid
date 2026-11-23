@@ -1,6 +1,7 @@
 using FluentValidation;
 using Mawid.Booking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 //builder.Services.AddControllers();
-builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>());
+builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>())
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
