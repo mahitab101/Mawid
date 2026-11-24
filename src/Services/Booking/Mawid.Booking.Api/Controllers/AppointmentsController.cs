@@ -1,5 +1,6 @@
 ﻿using Mawid.Booking.Api.Dtos.Appointments;
 using Mawid.Booking.Api.Dtos.UnifiedResponse;
+using Mawid.Booking.Api.Options;
 using Mawid.Booking.Api.Services;
 using Mawid.Booking.Domain.Entities;
 using Mawid.Booking.Domain.Enums;
@@ -7,13 +8,16 @@ using Mawid.Booking.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Mawid.Booking.Api.Controllers
 {
     [Route("api/appointments")]
     [ApiController]
-    public class AppointmentsController(BookingDbContext dbContext, AvailabilityService availabilityService) : ControllerBase
+    public class AppointmentsController(BookingDbContext dbContext, 
+        AvailabilityService availabilityService,
+        IOptions<BusinessOptions> businessOptions) : ControllerBase
     {
         [HttpPost]
         public async Task<ActionResult<ApiResponse<AppointmentResponse>>> Create(
@@ -27,7 +31,7 @@ namespace Mawid.Booking.Api.Controllers
                 return NotFound(ApiResponse<AppointmentResponse>.Fail("Provider or service not found"));
 
             var startUtc = request.StartTime.ToUniversalTime();
-            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Dubai");
+            var timeZone = businessOptions.Value.GetTimeZone();
             var localDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(startUtc, timeZone).DateTime);
 
             var available = await availabilityService.GetAvailableSlotsAsync(

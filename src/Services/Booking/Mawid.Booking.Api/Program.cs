@@ -1,4 +1,5 @@
 using FluentValidation;
+using Mawid.Booking.Api.Options;
 using Mawid.Booking.Api.Services;
 using Mawid.Booking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,11 @@ builder.Services.AddDbContext<BookingDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("BookingDb")));
 
 builder.Services.AddScoped<AvailabilityService>();
+
+builder.Services.AddOptions<BusinessOptions>()
+    .Bind(builder.Configuration.GetSection(BusinessOptions.SectionName))
+    .Validate(o => TimeZoneInfo.TryFindSystemTimeZoneById(o.TimeZone, out _), "Business:TimeZone is not a valid time zone")
+    .ValidateOnStart();
 
 builder.Services.AddCors(options =>
     options.AddPolicy("Frontend", policy =>

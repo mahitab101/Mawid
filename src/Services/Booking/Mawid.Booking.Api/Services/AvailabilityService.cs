@@ -1,10 +1,12 @@
-﻿using Mawid.Booking.Domain.Enums;
+﻿using Mawid.Booking.Api.Options;
+using Mawid.Booking.Domain.Enums;
 using Mawid.Booking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Mawid.Booking.Api.Services
 {
-    public class AvailabilityService(BookingDbContext dbContext)
+    public class AvailabilityService(BookingDbContext dbContext, IOptions<BusinessOptions> businessOptions)
     {
         public async Task<List<DateTimeOffset>?> GetAvailableSlotsAsync(
             Guid providerId, Guid serviceId, DateOnly date, CancellationToken cancellationToken)
@@ -27,7 +29,7 @@ namespace Mawid.Booking.Api.Services
             if (workingHours.Count == 0)
                 return [];
 
-            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Dubai");
+            var timeZone = businessOptions.Value.GetTimeZone();
             var duration = TimeSpan.FromMinutes(service.DurationMinutes);
             var slots = new List<(DateTimeOffset Start, DateTimeOffset End)>();
 
