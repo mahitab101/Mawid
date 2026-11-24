@@ -90,6 +90,21 @@ namespace Mawid.Booking.Infrastructure.Persistence.Migrations
                     b.ToTable("Providers");
                 });
 
+            modelBuilder.Entity("Mawid.Booking.Domain.Entities.ProviderService", b =>
+                {
+                    b.Property<Guid>("ProviderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ProviderId", "ServiceId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.ToTable("ProviderServices");
+                });
+
             modelBuilder.Entity("Mawid.Booking.Domain.Entities.Service", b =>
                 {
                     b.Property<Guid>("Id")
@@ -103,17 +118,12 @@ namespace Mawid.Booking.Infrastructure.Persistence.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
 
-                    b.Property<Guid>("ProviderId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ProviderId");
 
                     b.ToTable("Services");
                 });
@@ -162,15 +172,23 @@ namespace Mawid.Booking.Infrastructure.Persistence.Migrations
                     b.Navigation("Service");
                 });
 
-            modelBuilder.Entity("Mawid.Booking.Domain.Entities.Service", b =>
+            modelBuilder.Entity("Mawid.Booking.Domain.Entities.ProviderService", b =>
                 {
                     b.HasOne("Mawid.Booking.Domain.Entities.Provider", "Provider")
-                        .WithMany("Services")
+                        .WithMany("ProviderServices")
                         .HasForeignKey("ProviderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Mawid.Booking.Domain.Entities.Service", "Service")
+                        .WithMany("ProviderServices")
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Provider");
+
+                    b.Navigation("Service");
                 });
 
             modelBuilder.Entity("Mawid.Booking.Domain.Entities.WorkingHours", b =>
@@ -186,9 +204,14 @@ namespace Mawid.Booking.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Mawid.Booking.Domain.Entities.Provider", b =>
                 {
-                    b.Navigation("Services");
+                    b.Navigation("ProviderServices");
 
                     b.Navigation("WorkingHours");
+                });
+
+            modelBuilder.Entity("Mawid.Booking.Domain.Entities.Service", b =>
+                {
+                    b.Navigation("ProviderServices");
                 });
 #pragma warning restore 612, 618
         }

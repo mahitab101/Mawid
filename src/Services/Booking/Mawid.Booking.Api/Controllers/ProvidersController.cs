@@ -1,4 +1,5 @@
 ﻿using Mawid.Booking.Api.Dtos.Providers;
+using Mawid.Booking.Api.Dtos.Services;
 using Mawid.Booking.Api.Dtos.UnifiedResponse;
 using Mawid.Booking.Api.Services;
 using Mawid.Booking.Domain.Entities;
@@ -119,6 +120,36 @@ namespace Mawid.Booking.Api.Controllers
                 return NotFound(ApiResponse<List<DateTimeOffset>>.Fail("Provider or service not found"));
 
             return Ok(ApiResponse<List<DateTimeOffset>>.Ok(slots, "Available slots retrieved successfully"));
+        }
+
+
+        [HttpPut("{id:guid}/services")]
+        public async Task<ActionResult<ApiResponse<List<ServiceResponse>>>> UpdateServices(
+    Guid id, UpdateProviderServicesRequest request, CancellationToken cancellationToken)
+        {
+            var providerExists = await _dbContext.Providers
+                .AnyAsync(p => p.Id == id && p.IsActive, cancellationToken);
+            if (!providerExists)
+                return NotFound(ApiResponse<List<ServiceResponse>>.Fail("Provider not found"));
+
+            var services = await _dbContext.Services
+                .Where(s => request.ServiceIds.Contains(s.Id))
+                .ToListAsync(cancellationToken);
+            if (services.Count != request.ServiceIds.Count)
+                return BadRequest(ApiResponse<List<ServiceResponse>>.Fail("One or more services were not found"));
+
+            var oldLinks = await _dbContext.ProviderServices
+                .Where(ps => ps.ProviderId == id)
+                .ToListAsync(cancellationToken);
+            _dbContext.ProviderServices.RemoveRange(oldLinks);
+
+            _dbContext.ProviderServices.AddRange(
+                request.ServiceIds.Select(serviceId => new ProviderService { ProviderId = id, ServiceId = serviceId }));
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok(ApiResponse<List<ServiceResponse>>.Ok(
+                services.OrderBy(s => s.Title).ToResponse(), "Provider services updated"));
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Mawid.Booking.Domain.Entities
         public string? Title { get; set; }   
         public bool IsActive { get; set; }
 
-        public List<Service> Services { get; set; } = [];
+        public List<ProviderService> ProviderServices { get; set; } = [];
         public List<WorkingHours> WorkingHours { get; set; } = [];
     }
 }

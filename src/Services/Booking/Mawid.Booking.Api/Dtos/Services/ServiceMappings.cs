@@ -9,8 +9,7 @@ namespace Mawid.Booking.Api.Dtos.Services
             Id = service.Id,
             Title = service.Title,
             Price = service.Price,
-            DurationMinutes = service.DurationMinutes,
-            ProviderId = service.ProviderId
+            DurationMinutes = service.DurationMinutes
         };
 
         public static List<ServiceResponse> ToResponse(this IEnumerable<Service> services)

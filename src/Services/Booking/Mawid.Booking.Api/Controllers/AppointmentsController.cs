@@ -25,8 +25,7 @@ namespace Mawid.Booking.Api.Controllers
         {
             var service = await dbContext.Services.AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId
-                                       && s.ProviderId == request.ProviderId
-                                       && s.Provider.IsActive, cancellationToken);
+  && s.ProviderServices.Any(ps => ps.ProviderId == request.ProviderId && ps.Provider.IsActive), cancellationToken);
             if (service is null)
                 return NotFound(ApiResponse<AppointmentResponse>.Fail("Provider or service not found"));
 

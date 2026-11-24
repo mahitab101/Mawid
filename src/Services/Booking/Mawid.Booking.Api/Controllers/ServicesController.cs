@@ -1,4 +1,5 @@
-﻿using Mawid.Booking.Api.Dtos.Services;
+﻿using Mawid.Booking.Api.Dtos.Providers;
+using Mawid.Booking.Api.Dtos.Services;
 using Mawid.Booking.Api.Dtos.UnifiedResponse;
 using Mawid.Booking.Domain.Entities;
 using Mawid.Booking.Infrastructure.Persistence;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Mawid.Booking.Api.Controllers
 {
-    [Route("api/providers/{providerId:guid}/services")]
+    [Route("api/services")]
     [ApiController]
     public class ServicesController : ControllerBase
     {
@@ -20,17 +21,10 @@ namespace Mawid.Booking.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ServiceResponse>> Create(Guid providerId, CreateServiceRequest request, CancellationToken cancellationToken)
+        public async Task<ActionResult<ServiceResponse>> Create(CreateServiceRequest request, CancellationToken cancellationToken)
         {
-            var providerExists = await _dbContext.Providers
-                .AnyAsync(p => p.Id == providerId && p.IsActive, cancellationToken);
-
-            if (!providerExists)
-                return NotFound(ApiResponse<ServiceResponse>.Fail("Provider not found"));
-
             Service newService = new Service
             {
-                ProviderId = providerId,
                 Title = request.Title,
                 Price = request.Price,
                 DurationMinutes = request.DurationMinutes
@@ -46,24 +40,32 @@ namespace Mawid.Booking.Api.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult<List<ServiceResponse>>> GetAll(Guid providerId, CancellationToken cancellationToken)
+        public async Task<ActionResult<ApiResponse<List<ServiceResponse>>>> GetAll(CancellationToken cancellationToken)
         {
-            var providerExists = await _dbContext.Providers
-                .AnyAsync(p => p.Id == providerId && p.IsActive, cancellationToken);
-
-            if (!providerExists)
-                return NotFound(ApiResponse<ServiceResponse>.Fail("Provider not found"));
-
-            var providerServices = await _dbContext.Services
+            var services = await _dbContext.Services
                 .AsNoTracking()
-                .Where(s => s.ProviderId == providerId)
                 .OrderBy(s => s.Title)
                 .ToListAsync(cancellationToken);
 
-            return Ok(
-                ApiResponse<List<ServiceResponse>>.Ok(
-                    providerServices.ToResponse(),
-                    "Services retrieved successfully"));
+            return Ok(ApiResponse<List<ServiceResponse>>.Ok(services.ToResponse(), "Services retrieved successfully"));
+        }
+
+        [HttpGet("{id:guid}/providers")]
+        public async Task<ActionResult<ApiResponse<List<ProviderResponse>>>> GetProviders(
+    Guid id, CancellationToken cancellationToken)
+        {
+            var serviceExists = await _dbContext.Services.AnyAsync(s => s.Id == id, cancellationToken);
+            if (!serviceExists)
+                return NotFound(ApiResponse<List<ProviderResponse>>.Fail("Service not found"));
+
+            var providers = await _dbContext.ProviderServices
+                .AsNoTracking()
+                .Where(ps => ps.ServiceId == id && ps.Provider.IsActive)
+                .Select(ps => ps.Provider)
+                .OrderBy(p => p.Name)
+                .ToListAsync(cancellationToken);
+
+            return Ok(ApiResponse<List<ProviderResponse>>.Ok(providers.ToResponse(), "Providers retrieved successfully"));
         }
     }
 }

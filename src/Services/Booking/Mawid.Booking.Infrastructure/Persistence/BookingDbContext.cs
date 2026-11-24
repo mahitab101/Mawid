@@ -13,6 +13,7 @@ namespace Mawid.Booking.Infrastructure.Persistence
         public DbSet<Service> Services => Set<Service>();
         public DbSet<WorkingHours> WorkingHours => Set<WorkingHours>();
         public DbSet<Appointment> Appointments => Set<Appointment>();
+        public DbSet<ProviderService> ProviderServices => Set<ProviderService>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

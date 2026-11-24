@@ -13,9 +13,8 @@ namespace Mawid.Booking.Api.Services
         {
             var service = await dbContext.Services
                          .AsNoTracking()
-                         .FirstOrDefaultAsync(s => s.Id == serviceId
-                                              && s.ProviderId == providerId
-                                              && s.Provider.IsActive, cancellationToken);
+        .FirstOrDefaultAsync(s => s.Id == serviceId &&
+        s.ProviderServices.Any(ps => ps.ProviderId == providerId && ps.Provider.IsActive), cancellationToken);
 
             if (service is null)
                 return null;
