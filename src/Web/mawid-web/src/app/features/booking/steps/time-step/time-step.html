@@ -1,0 +1,26 @@
+<section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
+    <h2 class="text-lg font-semibold mb-4">Pick a time</h2>
+    @if (error()) {
+    <p class="mb-4 p-3 rounded-lg bg-red-50 text-sm text-red-700 font-medium">{{ error() }}</p>
+    }
+    @if (isLoading()) {
+    <p class="text-slate-500">Loading times...</p>
+    } @else {
+    <div class="flex flex-wrap gap-2">
+        @for (slot of slots(); track slot.startTime) {
+        <button type="button" [disabled]="!slot.isAvailable" (click)="selected.set(slot.startTime)" [class]="!slot.isAvailable
+                    ? 'border border-dashed border-slate-300 bg-slate-50 text-slate-400 line-through cursor-not-allowed'
+                    : selected() === slot.startTime
+                      ? 'border-2 border-primary bg-primary text-white cursor-pointer'
+                      : 'border border-slate-300 bg-white hover:border-slate-500 cursor-pointer'"
+            [attr.aria-label]="format(slot.startTime) + (slot.isAvailable ? '' : ' (unavailable)')"
+            class="min-w-24 min-h-11 px-4 rounded-lg text-sm font-medium">
+            {{ format(slot.startTime) }}
+        </button>
+        } @empty {
+        <p class="text-slate-500">No times available on this day</p>
+        }
+    </div>
+    <p class="text-xs text-slate-500 mt-4">Times shown in clinic time ({{ timeZone() }})</p>
+    }
+</section>

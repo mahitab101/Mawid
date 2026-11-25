@@ -1,16 +1,18 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { form, FormField, required, email, pattern } from '@angular/forms/signals';
 import { BusinessStore } from '../../../core/services/business-store';
 import { BookingApi } from '../../../core/services/booking-api';
 import { Appointment } from '../../../core/models/appointment';
+import { formatDate, formatTime } from '../../../core/utils/date-format';
 import { BookingConfirmation } from '../booking-confirmation/booking-confirmation';
 import { ServiceStep } from '../steps/service-step/service-step';
 import { ProviderStep } from '../steps/provider-step/provider-step';
-import { DateStep } from '../steps/date-step/date-step';
+import { DateStep, DayOption } from '../steps/date-step/date-step';
+import { TimeStep } from '../steps/time-step/time-step';
+import { CustomerDetails, DetailsStep } from '../steps/details-step/details-step';
 
 @Component({
-  imports: [FormField, BookingConfirmation, ServiceStep, ProviderStep, DateStep],
+  imports: [BookingConfirmation, ServiceStep, ProviderStep, DateStep, TimeStep, DetailsStep],
   selector: 'app-booking-page',
   styleUrl: './booking-page.css',
   templateUrl: './booking-page.html',
@@ -35,7 +37,7 @@ export class BookingPage {
   workingHours = this.api.getWorkingHours(this.selectedProviderId);
   openDays = computed(() => new Set(this.workingHours.value()?.data?.map(w => w.day) ?? []));
 
-  days = computed(() => {
+  days = computed<DayOption[]>(() => {
     const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const today = new Date();
     return Array.from({ length: 14 }, (_, i) => {
@@ -56,35 +58,12 @@ export class BookingPage {
   availability = this.api.getAvailability(this.selectedProviderId, this.selectedServiceId, this.selectedDate);
   selectedSlot = linkedSignal({ source: this.selectedDate, computation: () => null as string | null });
 
-  // ٥. البيانات
-  customer = signal({ name: '', phone: '', email: '' });
-  customerForm = form(this.customer, (c) => {
-    required(c.name, { message: 'Name is required' });
-    required(c.phone, { message: 'Mobile is required' });
-    pattern(c.phone, /^\+?[0-9 ]{9,15}$/, { message: 'Enter a valid mobile number' });
-    required(c.email, { message: 'Email is required' });
-    email(c.email, { message: 'Enter a valid email' });
-  });
-
-  // الحجز
+  // ٥. الحجز
   isSubmitting = signal(false);
   bookingError = signal<string | null>(null);
   bookedAppointment = signal<Appointment | null>(null);
 
-  selectSlot(slot: string) {
-    this.selectedSlot.set(slot);
-    this.bookingError.set(null);
-  }
-
-  book(event: Event) {
-    event.preventDefault();
-
-    if (this.customerForm().invalid()) {
-      this.customerForm().markAsTouched();
-      return;
-    }
-
-    const c = this.customer();
+  book(c: CustomerDetails) {
     this.isSubmitting.set(true);
     this.bookingError.set(null);
 
@@ -113,49 +92,31 @@ export class BookingPage {
     });
   }
 
+  // ٦. الإلغاء
+  bookingCancelled = signal(false);
+  isCancelling = signal(false);
+
+  cancelBooking() {
+    const appt = this.bookedAppointment();
+    if (!appt) return;
+    this.isCancelling.set(true);
+    this.api.cancelAppointment(appt.id).subscribe({
+      next: () => {
+        this.bookingCancelled.set(true);
+        this.isCancelling.set(false);
+        this.availability.reload();
+      },
+      error: () => this.isCancelling.set(false)
+    });
+  }
+
   bookAnother() {
     this.bookedAppointment.set(null);
+    this.bookingCancelled.set(false);   
     this.selectedServiceId.set(null);
-    this.customer.set({ name: '', phone: '', email: '' });
   }
 
   // helpers
-  initials(name: string) {
-    return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-  }
-
-  dayClass(d: { value: string; isOpen: boolean }) {
-    if (!d.isOpen) return 'border border-dashed border-slate-300 bg-slate-50 text-slate-500 cursor-not-allowed';
-    if (this.selectedDate() === d.value) return 'border-2 border-primary bg-primary text-white';
-    return 'border border-slate-200 bg-white text-slate-900 hover:border-slate-400 cursor-pointer';
-  }
-
-  formatTime(iso: string) {
-    return new Intl.DateTimeFormat('en-US', {
-      hour: 'numeric', minute: '2-digit', timeZone: this.businessStore.timeZone()
-    }).format(new Date(iso));
-  }
-
-  formatDate(iso: string) {
-  return new Intl.DateTimeFormat('en-GB', {
-    weekday: 'short', day: 'numeric', month: 'short', timeZone: this.businessStore.timeZone()
-  }).format(new Date(iso));
-}
-
-bookingCancelled = signal(false);
-isCancelling = signal(false);
-
-cancelBooking() {
-  const appt = this.bookedAppointment();
-  if (!appt) return;
-  this.isCancelling.set(true);
-  this.api.cancelAppointment(appt.id).subscribe({
-    next: () => {
-      this.bookingCancelled.set(true);
-      this.isCancelling.set(false);
-      this.availability.reload();
-    },
-    error: () => this.isCancelling.set(false)
-  });
-}
+  formatTime(iso: string) { return formatTime(iso, this.businessStore.timeZone()); }
+  formatDate(iso: string) { return formatDate(iso, this.businessStore.timeZone()); }
 }

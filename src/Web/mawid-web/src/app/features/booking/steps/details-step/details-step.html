@@ -1,0 +1,45 @@
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
+          <h2 class="text-lg font-semibold mb-4">Your details</h2>
+          <form novalidate (submit)="submit($event)" class="flex flex-col gap-5">
+
+            <div class="flex flex-col gap-1.5">
+              <label for="name" class="text-sm font-semibold">Full name</label>
+              <input id="name" type="text" autocomplete="name" [formField]="customerForm.name"
+                class="min-h-11 px-3.5 rounded-lg border border-slate-300 focus:border-primary focus:outline-none" />
+              @if (customerForm.name().touched() && customerForm.name().invalid()) {
+                @for (err of customerForm.name().errors(); track $index) {
+                  <span class="text-sm text-red-700">{{ err.message }}</span>
+                }
+              }
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="phone" class="text-sm font-semibold">Mobile (WhatsApp)</label>
+              <input id="phone" type="tel" autocomplete="tel" [formField]="customerForm.phone"
+                class="min-h-11 px-3.5 rounded-lg border border-slate-300 focus:border-primary focus:outline-none" />
+              <span class="text-xs text-slate-500">We'll send your reminder here the day before.</span>
+              @if (customerForm.phone().touched() && customerForm.phone().invalid()) {
+                @for (err of customerForm.phone().errors(); track $index) {
+                  <span class="text-sm text-red-700">{{ err.message }}</span>
+                }
+              }
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="email" class="text-sm font-semibold">Email</label>
+              <input id="email" type="email" autocomplete="email" [formField]="customerForm.email"
+                class="min-h-11 px-3.5 rounded-lg border border-slate-300 focus:border-primary focus:outline-none" />
+              @if (customerForm.email().touched() && customerForm.email().invalid()) {
+                @for (err of customerForm.email().errors(); track $index) {
+                  <span class="text-sm text-red-700">{{ err.message }}</span>
+                }
+              }
+            </div>
+
+            <button type="submit" [disabled]="isSubmitting()"
+              class="min-h-12 rounded-xl bg-primary text-white font-semibold cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-wait">
+              {{ isSubmitting() ? 'Booking...' : 'Confirm booking' }}
+            </button>
+          </form>
+        </section>
+      
