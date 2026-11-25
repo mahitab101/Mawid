@@ -1,45 +1,36 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
-import { httpResource } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../../core/models/api-response';
-import { ServiceProvider } from '../../../core/models/serviceProvider';
-import { BookingService } from '../../../core/models/service';
-import { WorkingHours } from '../../../core/models/working-hours';
+import { HttpErrorResponse } from '@angular/common/http';
+import { form, FormField, required, email, pattern } from '@angular/forms/signals';
 import { BusinessStore } from '../../../core/services/business-store';
-import { Slot } from '../../../core/models/slot';
+import { BookingApi } from '../../../core/services/booking-api';
+import { Appointment } from '../../../core/models/appointment';
+import { BookingConfirmation } from '../booking-confirmation/booking-confirmation';
 
 @Component({
-  imports: [],
+  imports: [FormField, BookingConfirmation],
   selector: 'app-booking-page',
   styleUrl: './booking-page.css',
   templateUrl: './booking-page.html',
 })
 export class BookingPage {
   protected businessStore = inject(BusinessStore);
+  private api = inject(BookingApi);
 
   // ١. الخدمة
-  services = httpResource<ApiResponse<BookingService[]>>(() => `${environment.apiUrl}/services`);
+  services = this.api.getServices();
   selectedServiceId = signal<string | null>(null);
+  selectedService = computed(() =>
+    this.services.value()?.data?.find(s => s.id === this.selectedServiceId()));
 
   // ٢. الـ provider
-  providers = httpResource<ApiResponse<ServiceProvider[]>>(() => {
-    const id = this.selectedServiceId();
-    return id ? `${environment.apiUrl}/services/${id}/providers` : undefined;
-  });
-  selectedProviderId = linkedSignal({
-    source: this.selectedServiceId,
-    computation: () => null as string | null
-  });
+  providers = this.api.getProviders(this.selectedServiceId);
+  selectedProviderId = linkedSignal({ source: this.selectedServiceId, computation: () => null as string | null });
+  selectedProvider = computed(() =>
+    this.providers.value()?.data?.find(p => p.id === this.selectedProviderId()));
 
   // ٣. اليوم
-  workingHours = httpResource<ApiResponse<WorkingHours[]>>(() => {
-    const id = this.selectedProviderId();
-    return id ? `${environment.apiUrl}/providers/${id}/working-hours` : undefined;
-  });
-
-  openDays = computed(() =>
-    new Set(this.workingHours.value()?.data?.map(w => w.day) ?? [])
-  );
+  workingHours = this.api.getWorkingHours(this.selectedProviderId);
+  openDays = computed(() => new Set(this.workingHours.value()?.data?.map(w => w.day) ?? []));
 
   days = computed(() => {
     const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -56,25 +47,74 @@ export class BookingPage {
     });
   });
 
-  selectedDate = linkedSignal({
-    source: this.selectedProviderId,
-    computation: () => null as string | null
-  });
+  selectedDate = linkedSignal({ source: this.selectedProviderId, computation: () => null as string | null });
 
   // ٤. الوقت
-  availability = httpResource<ApiResponse<Slot[]>>(() => {
-    const providerId = this.selectedProviderId();
-    const serviceId = this.selectedServiceId();
-    const date = this.selectedDate();
-    return providerId && serviceId && date
-      ? `${environment.apiUrl}/providers/${providerId}/availability?date=${date}&serviceId=${serviceId}`
-      : undefined;
+  availability = this.api.getAvailability(this.selectedProviderId, this.selectedServiceId, this.selectedDate);
+  selectedSlot = linkedSignal({ source: this.selectedDate, computation: () => null as string | null });
+
+  // ٥. البيانات
+  customer = signal({ name: '', phone: '', email: '' });
+  customerForm = form(this.customer, (c) => {
+    required(c.name, { message: 'Name is required' });
+    required(c.phone, { message: 'Mobile is required' });
+    pattern(c.phone, /^\+?[0-9 ]{9,15}$/, { message: 'Enter a valid mobile number' });
+    required(c.email, { message: 'Email is required' });
+    email(c.email, { message: 'Enter a valid email' });
   });
 
-  selectedSlot = linkedSignal({
-    source: this.selectedDate,
-    computation: () => null as string | null
-  });
+  // الحجز
+  isSubmitting = signal(false);
+  bookingError = signal<string | null>(null);
+  bookedAppointment = signal<Appointment | null>(null);
+
+  selectSlot(slot: string) {
+    this.selectedSlot.set(slot);
+    this.bookingError.set(null);
+  }
+
+  book(event: Event) {
+    event.preventDefault();
+
+    if (this.customerForm().invalid()) {
+      this.customerForm().markAsTouched();
+      return;
+    }
+
+    const c = this.customer();
+    this.isSubmitting.set(true);
+    this.bookingError.set(null);
+
+    this.api.createAppointment({
+      providerId: this.selectedProviderId()!,
+      serviceId: this.selectedServiceId()!,
+      startTime: this.selectedSlot()!,
+      customerName: c.name,
+      customerPhone: c.phone,
+      customerEmail: c.email
+    }).subscribe({
+      next: res => {
+        this.bookedAppointment.set(res.data);
+        this.isSubmitting.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isSubmitting.set(false);
+        if (err.status === 409) {
+          this.selectedSlot.set(null);
+          this.availability.reload();
+          this.bookingError.set(err.error?.message ?? 'Sorry, that time was just taken. Please pick another.');
+        } else {
+          this.bookingError.set('Something went wrong. Please try again.');
+        }
+      }
+    });
+  }
+
+  bookAnother() {
+    this.bookedAppointment.set(null);
+    this.selectedServiceId.set(null);
+    this.customer.set({ name: '', phone: '', email: '' });
+  }
 
   // helpers
   initials(name: string) {

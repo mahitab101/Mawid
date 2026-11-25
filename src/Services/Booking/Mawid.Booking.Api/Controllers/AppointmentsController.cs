@@ -33,6 +33,21 @@ namespace Mawid.Booking.Api.Controllers
             var timeZone = businessOptions.Value.GetTimeZone();
             var localDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(startUtc, timeZone).DateTime);
 
+            // Prevent booking same service in the same day
+            var dayStartLocal = localDate.ToDateTime(TimeOnly.MinValue);
+            var dayStartUtc = new DateTimeOffset(dayStartLocal, timeZone.GetUtcOffset(dayStartLocal)).ToUniversalTime();
+            var dayEndUtc = dayStartUtc.AddDays(1);
+
+            var alreadyBooked = await dbContext.Appointments.AnyAsync(a =>
+                a.CustomerPhone == request.CustomerPhone
+                && a.ServiceId == request.ServiceId
+                && a.Status != AppointmentStatus.Cancelled
+                && a.StartTime >= dayStartUtc && a.StartTime < dayEndUtc,
+                cancellationToken);
+
+            if (alreadyBooked)
+                return Conflict(ApiResponse<AppointmentResponse>.Fail("You already have a booking for this service on this day"));
+
             var available = await availabilityService.GetAvailableSlotsAsync(
                 request.ProviderId, request.ServiceId, localDate, cancellationToken);
 

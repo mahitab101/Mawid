@@ -1,113 +1,175 @@
 <main class="min-h-screen bg-slate-50">
   <div class="max-w-5xl mx-auto px-6 py-8">
-    <h1 class="text-2xl font-bold text-slate-900 mb-6">Book an appointment</h1>
 
-    <!-- ١. الخدمة -->
-    <section class="bg-white border border-slate-200 rounded-2xl p-6">
-      <h2 class="text-lg font-semibold mb-4">Choose a service</h2>
-      @if (services.isLoading()) {
-        <p class="text-slate-500">Loading...</p>
-      } @else if (services.error()) {
-        <p class="text-red-700">Something went wrong</p>
-      } @else {
-        <div class="flex flex-col gap-3">
-          @for (s of services.value()?.data; track s.id) {
-            <button type="button" (click)="selectedServiceId.set(s.id)"
-              [class]="selectedServiceId() === s.id
-                ? 'border-2 border-primary bg-primary-soft'
-                : 'border border-slate-200 bg-white hover:border-slate-400'"
-              class="w-full flex items-center justify-between gap-4 p-4 rounded-xl text-left cursor-pointer transition">
-              <span class="flex flex-col">
-                <span class="font-semibold text-slate-900">{{ s.title }}</span>
-                <span class="text-sm text-slate-600">{{ s.durationMinutes }} min</span>
-              </span>
-              <span class="font-semibold text-slate-900">{{ s.price }} AED</span>
-            </button>
-          } @empty {
-            <p class="text-slate-500">No services available</p>
-          }
-        </div>
-      }
-    </section>
+    @if (bookedAppointment(); as appt) {
 
-    <!-- ٢. الـ provider -->
-    @if (selectedServiceId()) {
-      <section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
-        <h2 class="text-lg font-semibold mb-4">Choose a provider</h2>
-        @if (providers.isLoading()) {
+   <app-booking-confirmation
+    [serviceTitle]="selectedService()?.title ?? ''"
+    [providerName]="selectedProvider()?.name ?? ''"
+    [when]="selectedDate() + ' · ' + formatTime(appt.startTime)"
+    (bookAnother)="bookAnother()" />
+
+    } @else {
+
+      <h1 class="text-2xl font-bold text-slate-900 mb-6">Book an appointment</h1>
+
+      <!-- ١. الخدمة -->
+      <section class="bg-white border border-slate-200 rounded-2xl p-6">
+        <h2 class="text-lg font-semibold mb-4">Choose a service</h2>
+        @if (services.isLoading()) {
           <p class="text-slate-500">Loading...</p>
+        } @else if (services.error()) {
+          <p class="text-red-700">Something went wrong</p>
         } @else {
-          <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            @for (p of providers.value()?.data; track p.id) {
-              <button type="button" (click)="selectedProviderId.set(p.id)"
-                [class]="selectedProviderId() === p.id
+          <div class="flex flex-col gap-3">
+            @for (s of services.value()?.data; track s.id) {
+              <button type="button" (click)="selectedServiceId.set(s.id)"
+                [class]="selectedServiceId() === s.id
                   ? 'border-2 border-primary bg-primary-soft'
                   : 'border border-slate-200 bg-white hover:border-slate-400'"
-                class="flex items-center gap-3 p-4 rounded-xl text-left cursor-pointer transition">
-                <span class="size-11 shrink-0 rounded-full bg-primary text-white grid place-items-center font-semibold">
-                  {{ initials(p.name) }}
-                </span>
+                class="w-full flex items-center justify-between gap-4 p-4 rounded-xl text-left cursor-pointer transition">
                 <span class="flex flex-col">
-                  <span class="font-semibold text-slate-900">{{ p.name }}</span>
-                  <span class="text-sm text-slate-600">{{ p.title }}</span>
+                  <span class="font-semibold text-slate-900">{{ s.title }}</span>
+                  <span class="text-sm text-slate-600">{{ s.durationMinutes }} min</span>
                 </span>
+                <span class="font-semibold text-slate-900">{{ s.price }} AED</span>
               </button>
             } @empty {
-              <p class="text-slate-500">No one offers this service right now</p>
+              <p class="text-slate-500">No services available</p>
             }
           </div>
         }
       </section>
-    }
 
-    <!-- ٣. اليوم -->
-    @if (selectedProviderId()) {
-      <section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
-        <h2 class="text-lg font-semibold mb-4">Pick a date</h2>
-        <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
-          @for (d of days(); track d.value) {
-            <button type="button" [disabled]="!d.isOpen" (click)="selectedDate.set(d.value)"
-              [class]="dayClass(d)"
-              class="flex flex-col items-center py-2 rounded-xl min-h-16">
-              <span class="text-xs">{{ d.dayShort }}</span>
-              <span class="text-lg font-bold">{{ d.dayNumber }}</span>
-              @if (!d.isOpen) { <span class="text-xs">Closed</span> }
-            </button>
+      <!-- ٢. الـ provider -->
+      @if (selectedServiceId()) {
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
+          <h2 class="text-lg font-semibold mb-4">Choose a provider</h2>
+          @if (providers.isLoading()) {
+            <p class="text-slate-500">Loading...</p>
+          } @else {
+            <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              @for (p of providers.value()?.data; track p.id) {
+                <button type="button" (click)="selectedProviderId.set(p.id)"
+                  [class]="selectedProviderId() === p.id
+                    ? 'border-2 border-primary bg-primary-soft'
+                    : 'border border-slate-200 bg-white hover:border-slate-400'"
+                  class="flex items-center gap-3 p-4 rounded-xl text-left cursor-pointer transition">
+                  <span class="size-11 shrink-0 rounded-full bg-primary text-white grid place-items-center font-semibold">
+                    {{ initials(p.name) }}
+                  </span>
+                  <span class="flex flex-col">
+                    <span class="font-semibold text-slate-900">{{ p.name }}</span>
+                    <span class="text-sm text-slate-600">{{ p.title }}</span>
+                  </span>
+                </button>
+              } @empty {
+                <p class="text-slate-500">No one offers this service right now</p>
+              }
+            </div>
           }
-        </div>
-      </section>
-    }
+        </section>
+      }
 
-    <!-- ٤. الوقت -->
-    @if (selectedDate()) {
-      <section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
-        <h2 class="text-lg font-semibold mb-4">Pick a time</h2>
-        @if (availability.isLoading()) {
-          <p class="text-slate-500">Loading times...</p>
-        } @else {
-          <div class="flex flex-wrap gap-2">
-            
-@for (slot of availability.value()?.data; track slot.startTime) {
-  <button type="button"
-    [disabled]="!slot.isAvailable"
-    (click)="selectedSlot.set(slot.startTime)"
-    [class]="!slot.isAvailable
-      ? 'border border-dashed border-slate-300 bg-slate-50 text-slate-400 line-through cursor-not-allowed'
-      : selectedSlot() === slot.startTime
-        ? 'border-2 border-primary bg-primary text-white cursor-pointer'
-        : 'border border-slate-300 bg-white hover:border-slate-500 cursor-pointer'"
-    [attr.aria-label]="formatTime(slot.startTime) + (slot.isAvailable ? '' : ' (unavailable)')"
-    class="min-w-24 min-h-11 px-4 rounded-lg text-sm font-medium">
-    {{ formatTime(slot.startTime) }}
-  </button>
-
-            } @empty {
-              <p class="text-slate-500">No times available on this day</p>
+      <!-- ٣. اليوم -->
+      @if (selectedProviderId()) {
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
+          <h2 class="text-lg font-semibold mb-4">Pick a date</h2>
+          <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
+            @for (d of days(); track d.value) {
+              <button type="button" [disabled]="!d.isOpen" (click)="selectedDate.set(d.value)"
+                [class]="dayClass(d)"
+                class="flex flex-col items-center py-2 rounded-xl min-h-16">
+                <span class="text-xs">{{ d.dayShort }}</span>
+                <span class="text-lg font-bold">{{ d.dayNumber }}</span>
+                @if (!d.isOpen) { <span class="text-xs">Closed</span> }
+              </button>
             }
           </div>
-          <p class="text-xs text-slate-500 mt-4">Times shown in clinic time ({{ businessStore.timeZone() }})</p>
-        }
-      </section>
+        </section>
+      }
+
+      <!-- ٤. الوقت -->
+      @if (selectedDate()) {
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
+          <h2 class="text-lg font-semibold mb-4">Pick a time</h2>
+          @if (bookingError()) {
+            <p class="mb-4 p-3 rounded-lg bg-red-50 text-sm text-red-700 font-medium">{{ bookingError() }}</p>
+          }
+          @if (availability.isLoading()) {
+            <p class="text-slate-500">Loading times...</p>
+          } @else {
+            <div class="flex flex-wrap gap-2">
+              @for (slot of availability.value()?.data; track slot.startTime) {
+                <button type="button"
+                  [disabled]="!slot.isAvailable"
+                  (click)="selectSlot(slot.startTime)"
+                  [class]="!slot.isAvailable
+                    ? 'border border-dashed border-slate-300 bg-slate-50 text-slate-400 line-through cursor-not-allowed'
+                    : selectedSlot() === slot.startTime
+                      ? 'border-2 border-primary bg-primary text-white cursor-pointer'
+                      : 'border border-slate-300 bg-white hover:border-slate-500 cursor-pointer'"
+                  [attr.aria-label]="formatTime(slot.startTime) + (slot.isAvailable ? '' : ' (unavailable)')"
+                  class="min-w-24 min-h-11 px-4 rounded-lg text-sm font-medium">
+                  {{ formatTime(slot.startTime) }}
+                </button>
+              } @empty {
+                <p class="text-slate-500">No times available on this day</p>
+              }
+            </div>
+            <p class="text-xs text-slate-500 mt-4">Times shown in clinic time ({{ businessStore.timeZone() }})</p>
+          }
+        </section>
+      }
+
+      <!-- ٥. البيانات -->
+      @if (selectedSlot()) {
+        <section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
+          <h2 class="text-lg font-semibold mb-4">Your details</h2>
+          <form novalidate (submit)="book($event)" class="flex flex-col gap-5">
+
+            <div class="flex flex-col gap-1.5">
+              <label for="name" class="text-sm font-semibold">Full name</label>
+              <input id="name" type="text" autocomplete="name" [formField]="customerForm.name"
+                class="min-h-11 px-3.5 rounded-lg border border-slate-300 focus:border-primary focus:outline-none" />
+              @if (customerForm.name().touched() && customerForm.name().invalid()) {
+                @for (err of customerForm.name().errors(); track $index) {
+                  <span class="text-sm text-red-700">{{ err.message }}</span>
+                }
+              }
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="phone" class="text-sm font-semibold">Mobile (WhatsApp)</label>
+              <input id="phone" type="tel" autocomplete="tel" [formField]="customerForm.phone"
+                class="min-h-11 px-3.5 rounded-lg border border-slate-300 focus:border-primary focus:outline-none" />
+              <span class="text-xs text-slate-500">We'll send your reminder here the day before.</span>
+              @if (customerForm.phone().touched() && customerForm.phone().invalid()) {
+                @for (err of customerForm.phone().errors(); track $index) {
+                  <span class="text-sm text-red-700">{{ err.message }}</span>
+                }
+              }
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="email" class="text-sm font-semibold">Email</label>
+              <input id="email" type="email" autocomplete="email" [formField]="customerForm.email"
+                class="min-h-11 px-3.5 rounded-lg border border-slate-300 focus:border-primary focus:outline-none" />
+              @if (customerForm.email().touched() && customerForm.email().invalid()) {
+                @for (err of customerForm.email().errors(); track $index) {
+                  <span class="text-sm text-red-700">{{ err.message }}</span>
+                }
+              }
+            </div>
+
+            <button type="submit" [disabled]="isSubmitting()"
+              class="min-h-12 rounded-xl bg-primary text-white font-semibold cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-wait">
+              {{ isSubmitting() ? 'Booking...' : 'Confirm booking' }}
+            </button>
+          </form>
+        </section>
+      }
+
     }
   </div>
 </main>

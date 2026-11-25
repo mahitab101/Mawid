@@ -1,0 +1,19 @@
+<div class="max-w-lg mx-auto bg-white border border-slate-200 rounded-2xl p-8 flex flex-col items-center gap-4 text-center">
+  <div class="size-16 rounded-full bg-primary-soft grid place-items-center">
+    <svg class="size-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+  </div>
+  <h1 class="text-2xl font-bold text-slate-900">You're booked</h1>
+  <p class="text-slate-600">We'll ask you to confirm on WhatsApp the day before.</p>
+  <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-semibold">Pending confirmation</span>
+
+  <dl class="w-full mt-2 p-5 rounded-xl bg-slate-50 flex flex-col gap-3 text-sm text-left">
+    <div class="flex justify-between gap-4"><dt class="text-slate-600">Service</dt><dd class="font-semibold text-right">{{ serviceTitle() }}</dd></div>
+    <div class="flex justify-between gap-4"><dt class="text-slate-600">With</dt><dd class="font-semibold text-right">{{ providerName() }}</dd></div>
+    <div class="flex justify-between gap-4"><dt class="text-slate-600">When</dt><dd class="font-semibold text-right">{{ when() }}</dd></div>
+  </dl>
+
+  <button type="button" (click)="bookAnother.emit()"
+    class="w-full min-h-12 rounded-xl bg-primary text-white font-semibold cursor-pointer hover:opacity-90">
+    Book another
+  </button>
+</div>
