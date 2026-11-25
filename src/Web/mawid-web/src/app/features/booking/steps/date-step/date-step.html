@@ -1,0 +1,13 @@
+<section class="bg-white border border-slate-200 rounded-2xl p-6 mt-6">
+    <h2 class="text-lg font-semibold mb-4">Pick a date</h2>
+    <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
+        @for (d of days(); track d.value) {
+        <button type="button" [disabled]="!d.isOpen" (click)="selected.set(d.value)" [class]="dayClass(d)"
+            class="flex flex-col items-center py-2 rounded-xl min-h-16">
+            <span class="text-xs">{{ d.dayShort }}</span>
+            <span class="text-lg font-bold">{{ d.dayNumber }}</span>
+            @if (!d.isOpen) { <span class="text-xs">Closed</span> }
+        </button>
+        }
+    </div>
+</section>

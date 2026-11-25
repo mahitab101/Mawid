@@ -5,9 +5,12 @@ import { BusinessStore } from '../../../core/services/business-store';
 import { BookingApi } from '../../../core/services/booking-api';
 import { Appointment } from '../../../core/models/appointment';
 import { BookingConfirmation } from '../booking-confirmation/booking-confirmation';
+import { ServiceStep } from '../steps/service-step/service-step';
+import { ProviderStep } from '../steps/provider-step/provider-step';
+import { DateStep } from '../steps/date-step/date-step';
 
 @Component({
-  imports: [FormField, BookingConfirmation],
+  imports: [FormField, BookingConfirmation, ServiceStep, ProviderStep, DateStep],
   selector: 'app-booking-page',
   styleUrl: './booking-page.css',
   templateUrl: './booking-page.html',
@@ -132,4 +135,27 @@ export class BookingPage {
       hour: 'numeric', minute: '2-digit', timeZone: this.businessStore.timeZone()
     }).format(new Date(iso));
   }
+
+  formatDate(iso: string) {
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short', day: 'numeric', month: 'short', timeZone: this.businessStore.timeZone()
+  }).format(new Date(iso));
+}
+
+bookingCancelled = signal(false);
+isCancelling = signal(false);
+
+cancelBooking() {
+  const appt = this.bookedAppointment();
+  if (!appt) return;
+  this.isCancelling.set(true);
+  this.api.cancelAppointment(appt.id).subscribe({
+    next: () => {
+      this.bookingCancelled.set(true);
+      this.isCancelling.set(false);
+      this.availability.reload();
+    },
+    error: () => this.isCancelling.set(false)
+  });
+}
 }

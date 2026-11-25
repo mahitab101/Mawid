@@ -1,0 +1,26 @@
+<!-- ١. الخدمة -->
+<section class="bg-white border border-slate-200 rounded-2xl p-6">
+    <h2 class="text-lg font-semibold mb-4">Choose a service</h2>
+    @if (isLoading()) {
+    <p class="text-slate-500">Loading...</p>
+    } @else if (hasError()) {
+    <p class="text-red-700">Something went wrong</p>
+    } @else {
+    <div class="flex flex-col gap-3">
+        @for (s of services(); track s.id) {
+        <button type="button" (click)="selected.set(s.id)" [class]="selected() === s.id
+                  ? 'border-2 border-primary bg-primary-soft'
+                  : 'border border-slate-200 bg-white hover:border-slate-400'"
+            class="w-full flex items-center justify-between gap-4 p-4 rounded-xl text-left cursor-pointer transition">
+            <span class="flex flex-col">
+                <span class="font-semibold text-slate-900">{{ s.title }}</span>
+                <span class="text-sm text-slate-600">{{ s.durationMinutes }} min</span>
+            </span>
+            <span class="font-semibold text-slate-900">{{ s.price }} AED</span>
+        </button>
+        } @empty {
+        <p class="text-slate-500">No services available</p>
+        }
+    </div>
+    }
+</section>

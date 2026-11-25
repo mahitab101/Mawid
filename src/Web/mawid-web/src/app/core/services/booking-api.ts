@@ -42,4 +42,8 @@ export class BookingApi {
   createAppointment(request: CreateAppointmentRequest) {
     return this.http.post<ApiResponse<Appointment>>(`${this.base}/appointments`, request);
   }
+
+  cancelAppointment(id: string) {
+  return this.http.patch<void>(`${this.base}/appointments/${id}/cancel`, {});
+}
 }
