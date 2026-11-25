@@ -1,4 +1,6 @@
-﻿using Mawid.Booking.Api.Options;
+﻿
+using Mawid.Booking.Api.Dtos.Availability;
+using Mawid.Booking.Api.Options;
 using Mawid.Booking.Domain.Enums;
 using Mawid.Booking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +10,7 @@ namespace Mawid.Booking.Api.Services
 {
     public class AvailabilityService(BookingDbContext dbContext, IOptions<BusinessOptions> businessOptions)
     {
-        public async Task<List<DateTimeOffset>?> GetAvailableSlotsAsync(
+        public async Task<List<SlotResponse>?> GetAvailableSlotsAsync(
             Guid providerId, Guid serviceId, DateOnly date, CancellationToken cancellationToken)
         {
             var service = await dbContext.Services
@@ -59,9 +61,12 @@ namespace Mawid.Booking.Api.Services
                 .Select(a => new { a.StartTime, a.EndTime })
                 .ToListAsync(cancellationToken);
 
+            var now = DateTimeOffset.UtcNow;
+
             return slots
-                .Where(slot => !booked.Any(b => slot.Start < b.EndTime && slot.End > b.StartTime))
-                .Select(slot => slot.Start)
+                .Select(slot => new SlotResponse(
+                    slot.Start,
+                    slot.Start > now && !booked.Any(b => slot.Start < b.EndTime && slot.End > b.StartTime)))
                 .ToList();
         }
     }

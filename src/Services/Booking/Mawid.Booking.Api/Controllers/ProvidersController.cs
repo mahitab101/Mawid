@@ -1,4 +1,5 @@
-﻿using Mawid.Booking.Api.Dtos.Providers;
+﻿using Mawid.Booking.Api.Dtos.Availability;
+using Mawid.Booking.Api.Dtos.Providers;
 using Mawid.Booking.Api.Dtos.Services;
 using Mawid.Booking.Api.Dtos.UnifiedResponse;
 using Mawid.Booking.Api.Services;
@@ -107,7 +108,7 @@ namespace Mawid.Booking.Api.Controllers
         }
 
         [HttpGet("{id:guid}/availability")]
-        public async Task<ActionResult<ApiResponse<List<DateTimeOffset>>>> GetAvailability(
+        public async Task<ActionResult<ApiResponse<List<SlotResponse>>>> GetAvailability(
         Guid id,
         [FromQuery] DateOnly date,
         [FromQuery] Guid serviceId,
@@ -119,7 +120,7 @@ namespace Mawid.Booking.Api.Controllers
             if (slots is null)
                 return NotFound(ApiResponse<List<DateTimeOffset>>.Fail("Provider or service not found"));
 
-            return Ok(ApiResponse<List<DateTimeOffset>>.Ok(slots, "Available slots retrieved successfully"));
+            return Ok(ApiResponse<List<SlotResponse>>.Ok(slots, "Available slots retrieved successfully"));
         }
 
 

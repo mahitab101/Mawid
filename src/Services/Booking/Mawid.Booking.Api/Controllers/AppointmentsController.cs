@@ -35,7 +35,8 @@ namespace Mawid.Booking.Api.Controllers
 
             var available = await availabilityService.GetAvailableSlotsAsync(
                 request.ProviderId, request.ServiceId, localDate, cancellationToken);
-            if (available is null || !available.Contains(startUtc))
+
+            if (available is null || !available.Any(s => s.StartTime == startUtc && s.IsAvailable))
                 return Conflict(ApiResponse<AppointmentResponse>.Fail("This time slot is not available"));
 
             var appointment = new Appointment
