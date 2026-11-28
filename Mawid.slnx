@@ -9,4 +9,7 @@
     <Project Path="src/Services/Booking/Mawid.Booking.Domain/Mawid.Booking.Domain.csproj" Id="c1cdb4fc-72af-41d5-8b4d-46c58cb6dfea" />
     <Project Path="src/Services/Booking/Mawid.Booking.Infrastructure/Mawid.Booking.Infrastructure.csproj" Id="b3fd42aa-5e4e-4a27-bd4d-839e1b7e5985" />
   </Folder>
+  <Folder Name="/src/Services/Identity/">
+    <Project Path="Mawid/src/Services/Identity/Mawid.Identity/Mawid.Identity.csproj" Id="80786d2c-c9b6-42eb-bebd-381b5a20c3ba" />
+  </Folder>
 </Solution>

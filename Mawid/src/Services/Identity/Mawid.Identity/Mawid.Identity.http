@@ -1,0 +1,6 @@
+@Mawid.Identity_HostAddress = http://localhost:5230
+
+GET {{Mawid.Identity_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
